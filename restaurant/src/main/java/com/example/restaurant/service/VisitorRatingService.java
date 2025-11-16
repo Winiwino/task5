@@ -17,6 +17,19 @@ public class VisitorRatingService {
     private final RestaurantService restaurantService;
 
     public void save(VisitorRating rating, Restaurant restaurant) {
+
+        if (rating.getRating() < 1 || rating.getRating() > 5) {
+            throw new IllegalArgumentException("Оценка должна быть от 1 до 5");
+        }
+
+        if (rating.getVisitorId() == null) {
+            throw new IllegalArgumentException("ID посетителя обязателен");
+        }
+
+        if (rating.getRestaurantId() == null) {
+            throw new IllegalArgumentException("ID ресторана обязателен");
+        }
+        
         ratingRepository.save(rating);
 
         List<Integer> restaurantRatings = ratingRepository.findAll().stream()

@@ -14,6 +14,15 @@ public class VisitorService {
     private final VisitorRepository visitorRepository;
 
     public void save(Visitor visitor) {
+
+        if (visitor.getAge() <= 0) {
+            throw new IllegalArgumentException("Возраст должен быть больше 0");
+        }
+
+        if (visitor.getGender() == null || visitor.getGender().isBlank()) {
+            throw new IllegalArgumentException("Пол обязателен");
+        }
+
         visitorRepository.save(visitor);
     }
 

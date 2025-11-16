@@ -16,6 +16,26 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
 
     public void save(Restaurant restaurant) {
+
+        if (restaurant.getAverageCheck() == null ||
+            restaurant.getAverageCheck().compareTo(BigDecimal.ZERO) <= 0) {
+
+            throw new IllegalArgumentException("Средний чек должен быть больше 0");
+        }
+
+        if (restaurant.getName() == null || restaurant.getName().isBlank()) {
+            throw new IllegalArgumentException("Название ресторана не может быть пустым");
+        }
+
+        if (restaurant.getCuisineType() == null) {
+            throw new IllegalArgumentException("Тип кухни обязателен");
+        }
+
+        
+
+        if (restaurant.getDescription() == null) {
+            restaurant.setDescription("");
+        }
         restaurantRepository.save(restaurant);
     }
 
