@@ -1,36 +1,58 @@
 package com.example.restaurant.service;
 
+import com.example.restaurant.dto.VisitorRequestDTO;
+import com.example.restaurant.dto.VisitorResponseDTO;
 import com.example.restaurant.entity.Visitor;
+import com.example.restaurant.mapper.VisitorMapper;
 import com.example.restaurant.repository.VisitorRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class VisitorService {
 
     private final VisitorRepository visitorRepository;
+    private final VisitorMapper mapper;
 
-    public void save(Visitor visitor) {
+    public VisitorResponseDTO create(VisitorRequestDTO dto) {
 
-        if (visitor.getAge() <= 0) {
-            throw new IllegalArgumentException("Возраст должен быть больше 0");
-        }
-
-        if (visitor.getGender() == null || visitor.getGender().isBlank()) {
-            throw new IllegalArgumentException("Пол обязателен");
-        }
+        Visitor visitor = mapper.toEntity(dto);
 
         visitorRepository.save(visitor);
+
+        return mapper.toResponseDTO(visitor);
     }
 
-    public void remove(Visitor visitor) {
-        visitorRepository.remove(visitor);
+    public VisitorResponseDTO update(Long id, VisitorRequestDTO dto) {
+
+        Visitor visitor = visitorRepository.findById(id);
+
+        visitor.setName(dto.name());
+        visitor.setAge(dto.age());
+        visitor.setGender(dto.gender());
+
+        visitorRepository.save(visitor);
+
+        return mapper.toResponseDTO(visitor);
     }
 
-    public List<Visitor> findAll() {
-        return visitorRepository.findAll();
+    public List<VisitorResponseDTO> getAll() {
+        return visitorRepository.findAll()
+                .stream()
+                .map(mapper::toResponseDTO)
+                .toList();
+    }
+
+    public VisitorResponseDTO getById(Long id) {
+        return mapper.toResponseDTO(
+                visitorRepository.findById(id)
+        );
+    }
+
+    public void delete(Long id) {
+        visitorRepository.remove(id);
     }
 }

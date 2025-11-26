@@ -1,7 +1,12 @@
 package com.example.restaurant;
 
-import com.example.restaurant.entity.*;
-import com.example.restaurant.service.*;
+import com.example.restaurant.dto.RestaurantRequestDTO;
+import com.example.restaurant.dto.VisitorRatingRequestDTO;
+import com.example.restaurant.dto.VisitorRequestDTO;
+import com.example.restaurant.entity.CuisineType;
+import com.example.restaurant.service.RestaurantService;
+import com.example.restaurant.service.VisitorRatingService;
+import com.example.restaurant.service.VisitorService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -25,91 +30,77 @@ public class TestDataRunner implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        // посетители
-        Visitor v1 = new Visitor(1L, "Nastya", 25, "Женский");
-        Visitor v2 = new Visitor(2L, null, 30, "Мужской"); // анонимный
-        visitorService.save(v1);
-        visitorService.save(v2);
+        // Посетители
+        var v1 = visitorService.create(new VisitorRequestDTO(
+                "Nastya", 25, "Женский"
+        ));
+        var v2 = visitorService.create(new VisitorRequestDTO(
+                null, 30, "Мужской"
+        ));
 
-        // рестораны
-        Restaurant r1 = new Restaurant(1L, "Антресоль", "", CuisineType.GEORGIAN,
-            BigDecimal.valueOf(20), BigDecimal.ZERO); // без описания
-        Restaurant r2 = new Restaurant(2L, "Алазани", "Грузинская кухня", CuisineType.GEORGIAN,
-            BigDecimal.valueOf(15), BigDecimal.ZERO);
-        Restaurant r3 = new Restaurant(3L, "Перчини", "Итальянская кухня", CuisineType.ITALIAN,
-            BigDecimal.valueOf(15), BigDecimal.ZERO);
-        restaurantService.save(r1);
-        restaurantService.save(r2);
-        restaurantService.save(r3);
+        // Рестораны
+        var r1 = restaurantService.create(new RestaurantRequestDTO(
+                "Антресоль", null,
+                CuisineType.GEORGIAN,
+                BigDecimal.valueOf(20)
+        ));
+        var r2 = restaurantService.create(new RestaurantRequestDTO(
+                "Алазани", "Грузинская кухня",
+                CuisineType.GEORGIAN,
+                BigDecimal.valueOf(15)
+        ));
+        var r3 = restaurantService.create(new RestaurantRequestDTO(
+                "Перчини", "Итальянская кухня",
+                CuisineType.ITALIAN,
+                BigDecimal.valueOf(15)
+        ));
 
-        // оценки
-        VisitorRating rating1 = new VisitorRating(v1.getId(), r1.getId(), 5, ""); // без комментария
-        VisitorRating rating2 = new VisitorRating(v2.getId(), r1.getId(), 4, "долго готовили");
-        VisitorRating rating3 = new VisitorRating(v1.getId(), r2.getId(), 3,"невкусно"); 
+        // Оценки
+        ratingService.create(new VisitorRatingRequestDTO(
+                v1.id(), r1.id(), 5, null
+        ));
+        ratingService.create(new VisitorRatingRequestDTO(
+                v2.id(), r1.id(), 4, "долго готовили"
+        ));
+        ratingService.create(new VisitorRatingRequestDTO(
+                v1.id(), r2.id(), 3, "невкусно"
+        ));
 
-        ratingService.save(rating1, r1);
-        ratingService.save(rating2, r1);
-        ratingService.save(rating3, r2);
+        // Просмотр результатов
+        System.out.println("\nСредние оценки ресторанов:");
+        restaurantService.getAll().forEach(r ->
+                System.out.println(r.name() + ": " + r.ratingUser())
+        );
 
+        System.out.println("\nВсе посетители:");
+        visitorService.getAll().forEach(System.out::println);
 
-        System.out.println("\nсредние оценки ресторанов");
-        restaurantService.findAll().forEach(r ->
-            System.out.println(r.getName() + " - средняя оценка: " + r.getRatingUser()));
-    
-        System.out.println("\nвсе посетители");
-        visitorService.findAll().forEach(v ->
-                System.out.println("ID: " + v.getId() + ", имя: " + v.getName() +
-                        ", возраст: " + v.getAge() + ", пол: " + v.getGender()));
-    
-        System.out.println("\n все рестораны");
-        restaurantService.findAll().forEach(r ->
-            System.out.println("ID: " + r.getId() + ", название: " + r.getName() +
-                    ", описание: '" + r.getDescription() + "'" +
-                    ", тип: " + r.getCuisineType() +
-                    ", средний чек: " + r.getAverageCheck() +
-                    ", оценка: " + r.getRatingUser()));
+        System.out.println("\nВсе рестораны:");
+        restaurantService.getAll().forEach(System.out::println);
 
-        System.out.println("\nвсе оценки");
-        ratingService.findAll().forEach(rating ->
-                System.out.println("VisitorId: " + rating.getVisitorId() +
-                        ", restaurantId: " + rating.getRestaurantId() +
-                        ", рейтинг: " + rating.getRating() +
-                        ", комментарий: " + rating.getComment()));
-        
-        System.out.println("\nУДАЛЯЕМ ДАННЫЕ");
+        System.out.println("\nВсе оценки:");
+        ratingService.getAll().forEach(System.out::println);
 
-        visitorService.remove(v2);    
-        restaurantService.remove(r3);
-        ratingService.remove(rating2, r1); 
+        // Удаление
+        System.out.println("\nУдаляем данные");
 
+        visitorService.delete(v2.id());
+        restaurantService.delete(r3.id());
+        ratingService.delete(v2.id(), r1.id());
 
-        System.out.println("\nсредние оценки ресторанов после удаления оценки");
-        
-        restaurantService.findAll().forEach(r ->
-            System.out.println(r.getName() + " - средняя оценка: " + r.getRatingUser()));
-    
-        System.out.println("\nпосетители после удаления");
-        visitorService.findAll().forEach(v ->
-                System.out.println("ID: " + v.getId() + ", имя: " + v.getName() +
-                        ", возраст: " + v.getAge() + ", пол: " + v.getGender()));
-    
-        System.out.println("\nрестораны после удаления");
-        restaurantService.findAll().forEach(r ->
-            System.out.println("ID: " + r.getId() + ", название: " + r.getName() +
-                    ", описание: '" + r.getDescription() + "'" +
-                    ", тип: " + r.getCuisineType() +
-                    ", средний чек: " + r.getAverageCheck() +
-                    ", оценка: " + r.getRatingUser()));
+        // Проверка после удаления
+        System.out.println("\nСредние оценки ресторанов после удаления:");
+        restaurantService.getAll().forEach(r ->
+                System.out.println(r.name() + ": " + r.ratingUser())
+        );
 
-        System.out.println("\nоценки после удаления");
-        ratingService.findAll().forEach(rating ->
-                System.out.println("VisitorId: " + rating.getVisitorId() +
-                        ", restaurantId: " + rating.getRestaurantId() +
-                        ", рейтинг: " + rating.getRating() +
-                        ", комментарий: " + rating.getComment()));
+        System.out.println("\nПосетители после удаления:");
+        visitorService.getAll().forEach(System.out::println);
 
-        
-     }
+        System.out.println("\nРестораны после удаления:");
+        restaurantService.getAll().forEach(System.out::println);
 
-        
+        System.out.println("\nОценки после удаления:");
+        ratingService.getAll().forEach(System.out::println);
+    }
 }
