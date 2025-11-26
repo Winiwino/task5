@@ -1,57 +1,77 @@
 package com.example.restaurant.service;
 
+import com.example.restaurant.dto.VisitorRatingRequestDTO;
+import com.example.restaurant.dto.VisitorRatingResponseDTO;
 import com.example.restaurant.entity.Restaurant;
 import com.example.restaurant.entity.VisitorRating;
+import com.example.restaurant.mapper.VisitorRatingMapper;
+import com.example.restaurant.repository.RestaurantRepository;
 import com.example.restaurant.repository.VisitorRatingRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class VisitorRatingService {
 
     private final VisitorRatingRepository ratingRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final VisitorRatingMapper mapper;
     private final RestaurantService restaurantService;
 
-    public void save(VisitorRating rating, Restaurant restaurant) {
+    public VisitorRatingResponseDTO create(VisitorRatingRequestDTO dto) {
+        VisitorRating rating = mapper.toEntity(dto);
+        ratingRepository.save(rating); 
+        updateRestaurantAverageRating(dto.restaurantId());
+        return mapper.toResponseDTO(rating);
+    }
 
-        if (rating.getRating() < 1 || rating.getRating() > 5) {
-            throw new IllegalArgumentException("Оценка должна быть от 1 до 5");
-        }
 
-        if (rating.getVisitorId() == null) {
-            throw new IllegalArgumentException("ID посетителя обязателен");
-        }
+    public VisitorRatingResponseDTO update(Long visitorId, Long restaurantId, VisitorRatingRequestDTO dto) {
+        VisitorRating rating = ratingRepository.findById(visitorId, restaurantId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "RРейтинг не найден для visitorId=" + visitorId + " и restaurantId=" + restaurantId
+                ));
 
-        if (rating.getRestaurantId() == null) {
-            throw new IllegalArgumentException("ID ресторана обязателен");
-        }
-        
+        rating.setRating(dto.rating());
+        rating.setComment(dto.comment());
+
         ratingRepository.save(rating);
+        updateRestaurantAverageRating(rating.getRestaurantId());
 
-        List<Integer> restaurantRatings = ratingRepository.findAll().stream()
-                .filter(r -> r.getRestaurantId().equals(restaurant.getId()))
-                .map(VisitorRating::getRating)
-                .collect(Collectors.toList());
-
-        restaurantService.updateAverageRating(restaurant, restaurantRatings);
+        return mapper.toResponseDTO(rating);
     }
 
-    public void remove(VisitorRating rating, Restaurant restaurant) {
-        ratingRepository.remove(rating);
-
-        List<Integer> restaurantRatings = ratingRepository.findAll().stream()
-                .filter(r -> r.getRestaurantId().equals(restaurant.getId()))
-                .map(VisitorRating::getRating)
-                .collect(Collectors.toList());
-
-        restaurantService.updateAverageRating(restaurant, restaurantRatings);
+    public List<VisitorRatingResponseDTO> getAll() {
+        return ratingRepository.findAll()
+                .stream()
+                .map(mapper::toResponseDTO)
+                .toList();
     }
 
-    public List<VisitorRating> findAll() {
-        return ratingRepository.findAll();
+    public VisitorRatingResponseDTO getById(Long visitorId, Long restaurantId) {
+        VisitorRating rating = ratingRepository.findById(visitorId, restaurantId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Рейтинг не найден для visitorId=" + visitorId + " и restaurantId=" + restaurantId
+                ));
+        return mapper.toResponseDTO(rating);
+    }
+
+    public void delete(Long visitorId, Long restaurantId) {
+        ratingRepository.remove(visitorId, restaurantId);
+        updateRestaurantAverageRating(restaurantId);
+    }
+
+    private void updateRestaurantAverageRating(Long restaurantId) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId);
+
+        List<Integer> ratings = ratingRepository.findAll().stream()
+                .filter(r -> r.getRestaurantId().equals(restaurantId))
+                .map(VisitorRating::getRating)
+                .toList();
+
+        restaurantService.updateAverageRating(restaurantId, ratings);
     }
 }

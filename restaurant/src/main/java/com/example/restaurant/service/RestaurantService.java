@@ -1,58 +1,79 @@
 package com.example.restaurant.service;
 
+import com.example.restaurant.dto.RestaurantRequestDTO;
+import com.example.restaurant.dto.RestaurantResponseDTO;
 import com.example.restaurant.entity.Restaurant;
+import com.example.restaurant.mapper.RestaurantMapper;
 import com.example.restaurant.repository.RestaurantRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-
 import java.math.BigDecimal;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
+    private final RestaurantMapper mapper;
 
-    public void save(Restaurant restaurant) {
+    public RestaurantResponseDTO create(RestaurantRequestDTO dto) {
 
-        if (restaurant.getAverageCheck() == null ||
-            restaurant.getAverageCheck().compareTo(BigDecimal.ZERO) <= 0) {
+        Restaurant restaurant = mapper.toEntity(dto);
 
-            throw new IllegalArgumentException("Средний чек должен быть больше 0");
-        }
-
-        if (restaurant.getName() == null || restaurant.getName().isBlank()) {
-            throw new IllegalArgumentException("Название ресторана не может быть пустым");
-        }
-
-        if (restaurant.getCuisineType() == null) {
-            throw new IllegalArgumentException("Тип кухни обязателен");
-        }
-
-        
-
-        if (restaurant.getDescription() == null) {
-            restaurant.setDescription("");
-        }
         restaurantRepository.save(restaurant);
+
+        return mapper.toResponseDTO(restaurant);
     }
 
-    public void remove(Restaurant restaurant) {
-        restaurantRepository.remove(restaurant);
+    public RestaurantResponseDTO update(Long id, RestaurantRequestDTO dto) {
+
+        Restaurant restaurant = restaurantRepository.findById(id);
+
+        restaurant.setName(dto.name());
+        restaurant.setDescription(dto.description());
+        restaurant.setCuisineType(dto.cuisineType());
+        restaurant.setAverageCheck(dto.averageCheck());
+
+        restaurantRepository.save(restaurant);
+
+        return mapper.toResponseDTO(restaurant);
     }
+
+
+    public List<RestaurantResponseDTO> getAll() {
+        return restaurantRepository.findAll()
+                .stream()
+                .map(mapper::toResponseDTO)
+                .toList();
+    }
+
+    public RestaurantResponseDTO getById(Long id) {
+        return mapper.toResponseDTO(
+                restaurantRepository.findById(id)
+        );
+    }
+
+    public void delete(Long id) {
+        restaurantRepository.remove(id);
+    }
+
 
     public List<Restaurant> findAll() {
         return restaurantRepository.findAll();
     }
 
-    public void updateAverageRating(Restaurant restaurant, List<Integer> ratings) {
-        if (ratings.isEmpty()) {
-            restaurant.setRatingUser(BigDecimal.ZERO);
-        } else {
-            double avg = ratings.stream().mapToInt(Integer::intValue).average().orElse(0.0);
-            restaurant.setRatingUser(BigDecimal.valueOf(avg));
-        }
+
+    public void updateAverageRating(Long restaurantId, List<Integer> ratings) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId);
+
+        double avg =
+                ratings.isEmpty()
+                        ? 0
+                        : ratings.stream().mapToInt(i -> i).average().orElse(0);
+
+        restaurant.setRatingUser(avg == 0 ? null : BigDecimal.valueOf(avg));
+
+        restaurantRepository.save(restaurant);
     }
 }
