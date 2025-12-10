@@ -18,24 +18,20 @@ public class VisitorService {
     private final VisitorMapper mapper;
 
     public VisitorResponseDTO create(VisitorRequestDTO dto) {
-
         Visitor visitor = mapper.toEntity(dto);
-
         visitorRepository.save(visitor);
-
         return mapper.toResponseDTO(visitor);
     }
 
     public VisitorResponseDTO update(Long id, VisitorRequestDTO dto) {
-
-        Visitor visitor = visitorRepository.findById(id);
+        Visitor visitor = visitorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Посетитель не найден: " + id));
 
         visitor.setName(dto.name());
         visitor.setAge(dto.age());
         visitor.setGender(dto.gender());
 
         visitorRepository.save(visitor);
-
         return mapper.toResponseDTO(visitor);
     }
 
@@ -47,12 +43,12 @@ public class VisitorService {
     }
 
     public VisitorResponseDTO getById(Long id) {
-        return mapper.toResponseDTO(
-                visitorRepository.findById(id)
-        );
+        Visitor visitor = visitorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Посетитель не найден: " + id));
+        return mapper.toResponseDTO(visitor);
     }
 
     public void delete(Long id) {
-        visitorRepository.remove(id);
+        visitorRepository.deleteById(id);
     }
 }

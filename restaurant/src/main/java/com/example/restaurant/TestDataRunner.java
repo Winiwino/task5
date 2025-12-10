@@ -86,7 +86,6 @@ public class TestDataRunner implements CommandLineRunner {
 
         visitorService.delete(v2.id());
         restaurantService.delete(r3.id());
-        ratingService.delete(v2.id(), r1.id());
 
         // Проверка после удаления
         System.out.println("\nСредние оценки ресторанов после удаления:");
@@ -99,8 +98,5 @@ public class TestDataRunner implements CommandLineRunner {
 
         System.out.println("\nРестораны после удаления:");
         restaurantService.getAll().forEach(System.out::println);
-
-        System.out.println("\nОценки после удаления:");
-        ratingService.getAll().forEach(System.out::println);
     }
 }

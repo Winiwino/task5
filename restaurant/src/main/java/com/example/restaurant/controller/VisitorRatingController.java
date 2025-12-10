@@ -21,10 +21,9 @@ public class VisitorRatingController {
         return ratingService.getAll();
     }
 
-    @GetMapping("/{visitorId}/{restaurantId}")
-    public VisitorRatingResponseDTO getById(@PathVariable Long visitorId,
-                                            @PathVariable Long restaurantId) {
-        return ratingService.getById(visitorId, restaurantId);
+    @GetMapping("/{id}")
+    public VisitorRatingResponseDTO getById(@PathVariable Long id) {
+        return ratingService.getById(id);
     }
 
     @PostMapping
@@ -32,16 +31,14 @@ public class VisitorRatingController {
         return ratingService.create(dto);
     }
 
-    @PutMapping("/{visitorId}/{restaurantId}")
-    public VisitorRatingResponseDTO update(@PathVariable Long visitorId,
-                                           @PathVariable Long restaurantId,
-                                           @RequestBody @Valid VisitorRatingRequestDTO dto) {
-        return ratingService.update(visitorId, restaurantId, dto);
+    @PutMapping("/{id}")
+    public VisitorRatingResponseDTO update(@PathVariable Long id,
+                                           @RequestBody VisitorRatingRequestDTO dto) {
+        return ratingService.update(id, dto);
     }
 
-    @DeleteMapping("/{visitorId}/{restaurantId}")
-    public void delete(@PathVariable Long visitorId,
-                       @PathVariable Long restaurantId) {
-        ratingService.delete(visitorId, restaurantId);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        ratingService.delete(id);
     }
 }
